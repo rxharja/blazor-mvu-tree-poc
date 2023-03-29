@@ -35,5 +35,7 @@
                             PaintingStep => new WorkflowLeaf(s, s.Stage, @<PaintingDash />)
                         })
                 .OfType<INode<object>>())));
+
+        var x = Root.Find(n => n is WorkflowLeaf { Value: DrawingStep, Stage: ActivityStatus.Pending });
     }
 }

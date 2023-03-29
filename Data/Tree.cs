@@ -2,17 +2,17 @@ using Microsoft.AspNetCore.Components;
 
 namespace test.Data;
 
-interface INode<out T> {
+public interface INode<out T> {
     T Value { get; }
     ActivityStatus Stage { get; }
     RenderFragment Fragment { get; }
 }
 
-interface IBranch<out T> : INode<T> {
+public interface IBranch<out T> : INode<T> {
     IEnumerable<INode<T>> Branches { get; }
 }
 
-record WorkflowBranch(object Value, IEnumerable<INode<object>> Branches) : IBranch<object> {
+public record WorkflowBranch(object Value, IEnumerable<INode<object>> Branches) : IBranch<object> {
     public ActivityStatus Stage => Branches switch {
         _ when Branches.All(o => o.Stage is ActivityStatus.Complete) => ActivityStatus.Complete,
         _ when Branches.All(o => o.Stage is ActivityStatus.Pending) => ActivityStatus.Pending,
@@ -28,4 +28,13 @@ record WorkflowBranch(object Value, IEnumerable<INode<object>> Branches) : IBran
     };
 }
 
-record struct WorkflowLeaf(object Value, ActivityStatus Stage, RenderFragment Fragment) : INode<object>;
+public record struct WorkflowLeaf(object Value, ActivityStatus Stage, RenderFragment Fragment) : INode<object>;
+
+public static class NodeExtensions
+{
+    public static INode<T>? Find<T>(this INode<T> node, Func<INode<T>, bool> f) => node switch {
+        _ when f(node) => node,
+        IBranch<T> branch => branch.Branches.Select(b => b.Find(f)).FirstOrDefault(),
+        _ => null
+    };
+}
