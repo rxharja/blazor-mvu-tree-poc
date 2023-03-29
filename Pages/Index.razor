@@ -26,11 +26,14 @@
             .ThenInclude( o => o.Steps )
             .FirstAsync();
 
-        Root = new WorkflowBranch( project, project.Operations.OrderBy( o => o.Ord ).Select(o => 
-                new WorkflowBranch(o, o.Steps.OrderBy( s => s.Ord ).Select(s => s switch { 
-                        DrawingStep ds => new WorkflowLeaf(ds, ds.Stage, @<DrawingDash Step="ds" />),
-                        PaintingStep => new WorkflowLeaf(s, s.Stage, @<PaintingDash />)
-                    }).OfType<INode<object>>()
-        )));
+        Root = new WorkflowBranch( project, project.Operations
+            .OrderBy( o => o.Ord )
+            .Select( o => new WorkflowBranch(o, o.Steps
+                .OrderBy( s => s.Ord )
+                .Select( s => s switch { 
+                            DrawingStep ds => new WorkflowLeaf(ds, ds.Stage, @<DrawingDash Step="ds" />),
+                            PaintingStep => new WorkflowLeaf(s, s.Stage, @<PaintingDash />)
+                        })
+                .OfType<INode<object>>())));
     }
 }
