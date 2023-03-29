@@ -1,0 +1,33 @@
+@using test.Data
+
+<h3>@Step.Name</h3>
+
+<p>Order: @Step.Ord</p>
+
+<p>Updated at @Step.Updated</p>
+
+@if (Stage is ActivityStatus.Pending)
+{
+   <button>Start</button>
+}
+
+@code {
+   [Parameter, EditorRequired] public DrawingStep Step { get; set; } 
+   
+   [Parameter, EditorRequired] public ActivityStatus Stage { get; set; } 
+   
+   [CascadingParameter] EventCallback RebuildCallback { get; }
+
+   async void OnStart()
+   {
+      await using var context = new Context();
+
+      var step = context.Steps.First(s => s.Id == Step.Id);
+
+      step.Stage = ActivityStatus.Active;
+
+      context.Steps.Update(step);
+
+      await RebuildCallback.InvokeAsync();
+   }
+}

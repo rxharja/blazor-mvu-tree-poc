@@ -1,0 +1,32 @@
+@using test.Data
+@using Microsoft.EntityFrameworkCore
+
+<h3>@Step.Name</h3>
+
+<p>Order: @Step.Ord</p>
+
+<p>Updated at @Step.Updated</p>
+
+<p>Stage: @Step.Stage</p>
+
+@if (Step.Stage is ActivityStatus.Pending)
+{
+   <button @onclick="@OnStart">Start</button>
+}
+
+@code {
+   [Inject] public IDbContextFactory<Context> ContextFactory { get; set; }
+   
+   [Parameter, EditorRequired] public DrawingStep Step { get; set; } 
+   
+   [CascadingParameter] EventCallback RebuildCallback { get; set; }
+
+   async void OnStart()
+   {
+      await using var context = await ContextFactory.CreateDbContextAsync();
+
+      await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 1 where Id = '{Step.Id}'");
+
+      await RebuildCallback.InvokeAsync();
+   }
+}

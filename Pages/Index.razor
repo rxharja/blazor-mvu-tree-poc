@@ -1,0 +1,36 @@
+﻿@page "/"
+
+@using test.Data
+@using Microsoft.EntityFrameworkCore
+
+@foreach (var node in Root.Branches) {
+    @if (node.Value is Operation op) {
+        <h3>@op.Name: @node.Stage</h3> 
+    }
+}
+
+<CascadingValue Value="@EventCallback.Factory.Create(this, Rebuild)" IsFixed="@true">
+    @Root.Fragment
+</CascadingValue>
+
+@code {
+    IBranch<object> Root { get; set; }
+
+    protected override Task OnInitializedAsync() => Rebuild();
+
+    async Task Rebuild() {
+        await using var context = new Context();
+
+        var project = await context.Projects
+            .Include( p => p.Operations )
+            .ThenInclude( o => o.Steps )
+            .FirstAsync();
+
+        Root = new WorkflowBranch( project, project.Operations.OrderBy( o => o.Ord ).Select(o => 
+                new WorkflowBranch(o, o.Steps.OrderBy( s => s.Ord ).Select(s => s switch { 
+                        DrawingStep ds => new WorkflowLeaf(ds, ds.Stage, @<DrawingDash Step="ds" />),
+                        PaintingStep => new WorkflowLeaf(s, s.Stage, @<PaintingDash />)
+                    }).OfType<INode<object>>()
+        )));
+    }
+}

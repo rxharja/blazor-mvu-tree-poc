@@ -1,0 +1,33 @@
+@using test.Data
+@using Microsoft.EntityFrameworkCore
+
+<h3>Drawing Process for @Step.Name</h3>
+
+@if (Step.Stage is ActivityStatus.Active)
+{
+    <p>You can only see this secret message if the stage is active</p>
+    
+    <button @onclick="@OnComplete">Click here to complete</button>
+}
+else
+{
+    <p>The stage is not active</p>
+}
+
+@code {
+    [Inject] public IDbContextFactory<Context> ContextFactory { get; set; }
+    
+    [Parameter, EditorRequired] public DrawingStep Step { get; set; }
+    
+    [CascadingParameter] public EventCallback RebuildCallback { get; set; }
+
+    async void OnComplete()
+    {
+      await using var context = await ContextFactory.CreateDbContextAsync();
+
+      await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 2 where Id = '{Step.Id}'");
+
+      await RebuildCallback.InvokeAsync();
+    }
+
+}
