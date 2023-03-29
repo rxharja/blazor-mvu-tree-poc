@@ -115,14 +115,14 @@ namespace test.Migrations
                 values ('c01c093a-86bd-44c1-8dd6-49ebf07a5c75', 'A Cool Project', (select date()), (select date()), (select date()), 1 );
 
                 insert into Operations (Id, Name, Start, Updated, Stop, ProjectId, Ord )
-                values ('b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 'Charcoal Operation', (select date()), (select date()), (select date()), 'c01c093a-86bd-44c1-8dd6-49ebf07a5c75', 1 );
-                values ('b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 'Pencil Operation', (select date()), (select date()), (select date()), 'c01c093a-86bd-44c1-8dd6-49ebf07a5c75', 2 );
+                values ('b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 'Charcoal Operation', (select date()), (select date()), (select date()), 'c01c093a-86bd-44c1-8dd6-49ebf07a5c75', 1 ),
+                       ('b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 'Pencil Operation', (select date()), (select date()), (select date()), 'c01c093a-86bd-44c1-8dd6-49ebf07a5c75', 2 );
 
                 insert into DrawingSteps (Id, Name, Start, Updated, Stop, Stage, OperationId, Ord )
-                values ('01ccb7b4-992f-4c44-adbe-44e59b605ee8', 'Charcoal', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 1 );
-                values ('01ccb7b4-992f-4c44-adbe-44e59b605ee8', 'Dusting', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 2 );
-                values ('01ccb7b4-992f-4c44-adbe-44e59b605ee8', 'Silhouettes', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 1 );
-                values ('01ccb7b4-992f-4c44-adbe-44e59b605ee8', 'Pencil', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 2 );
+                values ('01ccb7b4-992f-4c44-adbe-44e59b605ee8', 'Charcoal', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 1 ),
+                       ('01ccb7b4-992f-4c44-adbe-44e59b605ee7', 'Dusting', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b5', 2 ),
+                       ('01ccb7b4-992f-4c44-adbe-44e59b605ee6', 'Silhouettes', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 1 ),
+                       ('01ccb7b4-992f-4c44-adbe-44e59b605ee5', 'Pencil', (select date()), (select date()), (select date()), 0, 'b5d5a757-12f8-48d2-9ee8-18eeb0f025b2', 2 );
             """);
         }
 
