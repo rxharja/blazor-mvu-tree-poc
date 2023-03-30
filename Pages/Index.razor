@@ -38,15 +38,27 @@
         @<div>
             @foreach( var n in root.Branches ) {
                 @if( n.Value is IProjectItem p ) {
-                    <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))"
-                        class="@(Selected == p.Id ? "bg-danger" : "") 
-                                @(n.Stage is ActivityStatus.Active ? "text-success" : "")
-                                @(n.Stage is ActivityStatus.Pending ? "text-muted" : "")">
+                    <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))" class="@Bold(Selected, n) @StageColor(n)">
                         @p.Name
                     </h2>
                 }
             }
         </div>;
+
+    static string Bold(Guid? selected, INode<object> node) => node switch {
+        IBranch<object> b when b.Branches
+            .Select( n => n.Value)
+            .OfType<IProjectItem>()
+            .Any( n => n.Id == selected) => "fw-bold",
+        { Value: IProjectItem n } when n.Id == selected => "fw-bold",
+        _ => ""
+    };
+
+    static string StageColor(INode<object> n) => n.Stage switch {
+        ActivityStatus.Active => "text-success",
+        ActivityStatus.Complete => "text-black",
+        ActivityStatus.Pending => "text-muted"
+    };
 
     WorkflowBranch BuildOpNode(Operation op) {
         var opNode = new WorkflowBranch(op, null, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, null)));
@@ -62,8 +74,8 @@
 
     static RenderFragment StepDashFragment(Step? step) => step switch { 
         DrawingStep ds => @<DrawingDash Step="ds"/>,
-        PaintingStep ps => @<PaintingDash/>,
-        null => null
+        PaintingStep => @<PaintingDash/>,
+        _ => null
     };
 
     static RenderFragment Render<T>(INode<T> node, Guid? id) =>
