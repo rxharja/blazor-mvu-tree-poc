@@ -19,7 +19,7 @@
    
    [Parameter, EditorRequired] public DrawingStep Step { get; set; } 
    
-   [CascadingParameter] EventCallback RebuildCallback { get; set; }
+   [CascadingParameter] EventCallback ReloadCallback { get; set; }
 
    async void OnStart()
    {
@@ -27,6 +27,6 @@
 
       await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 1 where Id = '{Step.Id}'");
 
-      await RebuildCallback.InvokeAsync();
+      await ReloadCallback.InvokeAsync();
    }
 }

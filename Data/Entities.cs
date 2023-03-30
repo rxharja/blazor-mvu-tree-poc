@@ -31,6 +31,8 @@ public class Project : IProjectItem {
 
 public class Operation : IProjectItem {
     public Guid Id { get; set; }
+    public Guid ProjectId { get; set; }
+    public Project Project { get; set; }
     public string Name { get; set; }
     public int Ord { get; set; }
     public DateTime Start { get; set; }
@@ -41,6 +43,8 @@ public class Operation : IProjectItem {
 
 public abstract class Step : IProjectItem, IActivity {
     public Guid Id { get; set; }
+    public Guid OperationId { get; set; }
+    public Operation Operation { get; set; }
     public string Name { get; set; }
     public int Ord { get; set; }
     public DateTime Start { get; set; }
