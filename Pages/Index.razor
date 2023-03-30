@@ -45,15 +45,16 @@
         };
     }
 
-    RenderFragment TrackerFragment(WorkflowBranch root) => @<div>
-        @foreach( var n in root.Branches ) {
-            @if( n.Value is IProjectItem p ) {
-                <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))" class="@Bold(Selected, n) @StageColor(n)">
-                    @p.Name
-                </h2>
+    RenderFragment TrackerFragment(WorkflowBranch root) => 
+        @<div>
+            @foreach( var n in root.Branches ) {
+                @if( n.Value is IProjectItem p ) {
+                    <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))" class="@Bold(Selected, n) @StageColor(n)">
+                        @p.Name
+                    </h2>
+                }
             }
-        }
-    </div>;
+        </div>;
 
     static string Bold(Guid? selected, INode<object> node) => 
         node switch { IBranch<object> b when b.Branches.Any( n => Bold(selected, n) is not "") => "fw-bold",
@@ -70,6 +71,5 @@
                       PaintingStep => @<PaintingDash/>,
                       _ => null };
 
-    static RenderFragment Render<T>(INode<T> node, Guid? id) =>
-        node.RenderTraversal(n => ( n.Value as IProjectItem )?.Id == id) ?? node.Render();
+    static RenderFragment? Render<T>(INode<T> node, Guid? id) => node.Render(n => ( n.Value as IProjectItem )?.Id == id) ?? node.Render();
 }

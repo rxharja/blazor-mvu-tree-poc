@@ -3,14 +3,12 @@
 
 <h3>Drawing Process for @Step.Name</h3>
 
-@if (Step.Stage is ActivityStatus.Active)
-{
+@if (Step.Stage is ActivityStatus.Active) {
     <p>You can only see this secret message if the stage is active</p>
     
     <button @onclick="@OnComplete">Click here to complete</button>
 }
-else
-{
+else {
     <p>The stage is not active</p>
 }
 
@@ -21,8 +19,7 @@ else
     
     [CascadingParameter] public EventCallback ReloadCallback { get; set; }
 
-    async void OnComplete()
-    {
+    async void OnComplete() {
       await using var context = await ContextFactory.CreateDbContextAsync();
 
       await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 2 where Id = '{Step.Id}'");
