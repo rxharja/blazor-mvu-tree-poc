@@ -34,6 +34,17 @@
         };
     }
 
+    WorkflowBranch BuildOpNode(Operation op) {
+        var opNode = new WorkflowBranch(op, null, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, null)));
+        return opNode with { Branches = opNode.Branches
+            .Cast<WorkflowLeaf>()
+            .Select(n => n with { Fragment = @<div>
+                 @TrackerFragment(opNode)
+                 @StepDashFragment(n.Value as Step)
+             </div> })
+        };
+    }
+
     RenderFragment TrackerFragment(WorkflowBranch root) => @<div>
         @foreach( var n in root.Branches ) {
             @if( n.Value is IProjectItem p ) {
@@ -53,17 +64,6 @@
         n.Stage switch { ActivityStatus.Active => "text-success",
                          ActivityStatus.Complete => "text-black",
                          ActivityStatus.Pending => "text-muted" };
-
-    WorkflowBranch BuildOpNode(Operation op) {
-        var opNode = new WorkflowBranch(op, null, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, null)));
-        return opNode with { Branches = opNode.Branches
-            .Cast<WorkflowLeaf>()
-            .Select(n => n with { Fragment = @<div>
-                 @TrackerFragment(opNode)
-                 @StepDashFragment(n.Value as Step)
-             </div> })
-        };
-    }
 
     static RenderFragment StepDashFragment(Step? step) => 
         step switch { DrawingStep ds => @<DrawingDash Step="ds"/>,
