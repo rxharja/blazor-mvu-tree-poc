@@ -1,39 +1,71 @@
 ﻿@page "/"
+@page "/{Selected:guid}"
 
 @using test.Data
 @using Microsoft.EntityFrameworkCore
 
-@foreach (var node in Root.Branches) {
-    @if (node.Value is Operation op) {
-        <h3>@op.Name: @node.Stage</h3> 
-    }
-}
-
 <CascadingValue Value="@EventCallback.Factory.Create(this, Rebuild)" IsFixed="@true">
-    @Root.Fragment
+    @Render(Build(Project), Selected)
 </CascadingValue>
 
 @code {
-    IBranch<object> Root { get; set; }
+    [Inject] public NavigationManager NavMan { get; set; }
+
+    [Parameter] public Guid? Selected { get; set; }
+    
+    Project Project { get; set; }
 
     protected override Task OnInitializedAsync() => Rebuild();
-
+    
     async Task Rebuild() {
         await using var context = new Context();
-
-        var project = await context.Projects
+        Project = await context.Projects
             .Include( p => p.Operations )
             .ThenInclude( o => o.Steps )
             .FirstAsync();
-
-        Root = new WorkflowBranch( project, project.Operations
-            .OrderBy( o => o.Ord )
-            .Select( o => new WorkflowBranch(o, o.Steps
-                .OrderBy( s => s.Ord )
-                .Select( s => s switch { 
-                            DrawingStep ds => new WorkflowLeaf(ds, ds.Stage, @<DrawingDash Step="ds" />),
-                            PaintingStep => new WorkflowLeaf(s, s.Stage, @<PaintingDash />)
-                        })
-                .OfType<INode<object>>())));
     }
+
+    IBranch<object> Build(Project project) {
+        var root = new WorkflowBranch(project, @<h1>@project.Name</h1>, project.Operations.OrderBy(o => o.Ord).Select(BuildOpNode));
+        
+        return root with { Branches = root.Branches
+            .Cast<WorkflowBranch>()
+            .Select( n => n with { Fragment = TrackerFragment(root) })
+        };
+    }
+
+    RenderFragment TrackerFragment(WorkflowBranch root) =>
+        @<div>
+            @foreach( var n in root.Branches ) {
+                @if( n.Value is IProjectItem p ) {
+                    <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))"
+                        class="@(Selected == p.Id ? "bg-danger" : "") 
+                                @(n.Stage is ActivityStatus.Active ? "text-success" : "")
+                                @(n.Stage is ActivityStatus.Pending ? "text-muted" : "")">
+                        @p.Name
+                    </h2>
+                }
+            }
+        </div>;
+
+    WorkflowBranch BuildOpNode(Operation op) {
+        var opNode = new WorkflowBranch(op, null, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, null)));
+        return opNode with { Branches = opNode.Branches
+            .Cast<WorkflowLeaf>()
+            .Select(n => n with { Fragment = 
+             @<div>
+                 @TrackerFragment(opNode)
+                 @StepDashFragment(n.Value as Step)
+             </div> })
+        };
+    }
+
+    static RenderFragment StepDashFragment(Step? step) => step switch { 
+        DrawingStep ds => @<DrawingDash Step="ds"/>,
+        PaintingStep ps => @<PaintingDash/>,
+        null => null
+    };
+
+    static RenderFragment Render<T>(INode<T> node, Guid? id) =>
+        node.RenderTraversal(n => ( n.Value as IProjectItem )?.Id == id) ?? node.Render();
 }
