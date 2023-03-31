@@ -1,5 +1,4 @@
-﻿@page "/"
-@page "/{Selected:guid}"
+﻿@page "/{Selected:guid?}"
 
 @using test.Data
 @using Microsoft.EntityFrameworkCore
@@ -15,8 +14,14 @@
     
     Project Project { get; set; }
 
-    protected override Task OnInitializedAsync() => ReloadProject();
-    
+    protected override async Task OnInitializedAsync() {
+        await ReloadProject();
+        
+        if( Selected is null ) {
+            NavMan.NavigateTo($"{Build(Project).TraverseActive(n => n).Value.Id}");
+        }
+    }
+
     async Task ReloadProject() {
         await using var context = new Context();
         Project = await context.Projects
@@ -25,7 +30,7 @@
             .FirstAsync();
     }
 
-    IBranch<object> Build(Project project) {
+    INode<IProjectItem> Build(Project project) {
         var root = new WorkflowBranch(project, @<h1>@project.Name</h1>, project.Operations.OrderBy(o => o.Ord).Select(BuildOpNode));
         
         return root with { Branches = root.Branches
@@ -35,41 +40,40 @@
     }
 
     WorkflowBranch BuildOpNode(Operation op) {
-        var opNode = new WorkflowBranch(op, null, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, null)));
+        var opNode = new WorkflowBranch(op, @<div></div>, op.Steps.OrderBy(s => s.Ord).Select( s => new WorkflowLeaf(s, s.Stage, @<div></div>)));
         return opNode with { Branches = opNode.Branches
             .Cast<WorkflowLeaf>()
-            .Select(n => n with { Fragment = @<div>
-                 @TrackerFragment(opNode)
-                 @StepDashFragment(n.Value as Step)
-             </div> })
+            .Select( n => n with { Fragment = @<div>@TrackerFragment(opNode) @StepDashFragment(n.Value as Step)</div> })
         };
     }
 
     RenderFragment TrackerFragment(WorkflowBranch root) => 
         @<div>
             @foreach( var n in root.Branches ) {
-                @if( n.Value is IProjectItem p ) {
-                    <h2 @onclick="@(() => NavMan.NavigateTo($"/{p.Id}"))" class="@Bold(Selected, n) @StageColor(n)">
-                        @p.Name
-                    </h2>
-                }
+                <h2 @onclick="() => Navigate(n)" class="@Bold(Selected, n, root) @StageColor(n)">@n.Value.Name</h2>
             }
         </div>;
 
-    static string Bold(Guid? selected, INode<object> node) => 
-        node switch { IBranch<object> b when b.Branches.Any( n => Bold(selected, n) is not "") => "fw-bold",
-                      { Value: IProjectItem n } when n.Id == selected => "fw-bold",
-                      _ => "" };
+    void Navigate(INode<IProjectItem> node) => NavMan.NavigateTo($"/{node.Value.Id}");
 
-    static string StageColor(INode<object> n) => 
-        n.Stage switch { ActivityStatus.Active => "text-success",
-                         ActivityStatus.Complete => "text-black",
-                         ActivityStatus.Pending => "text-muted" };
+    static string Bold(Guid? selected, INode<IProjectItem> node, INode<IProjectItem> root) => node switch { 
+        {Value: {} v} when v.Id == selected => "fw-bold",
+        IBranch<IProjectItem> b when b.Branches.Any( n => Bold(selected,n, root) is not "" ) => "fw-bold",
+        _ when root.Value.Id == selected && root.TraverseActive( n => n.Value.Id == node.Value.Id ) => "fw-bold",
+        _ => "" 
+    };
 
-    static RenderFragment StepDashFragment(Step? step) => 
-        step switch { DrawingStep ds => @<DrawingDash Step="ds"/>,
-                      PaintingStep => @<PaintingDash/>,
-                      _ => null };
+    static string StageColor(INode<object> n) => n.Stage switch { 
+        ActivityStatus.Active => "text-success",
+        ActivityStatus.Complete => "text-black",
+        ActivityStatus.Pending => "text-muted" 
+    };
 
-    static RenderFragment? Render<T>(INode<T> node, Guid? id) => node.Render(n => ( n.Value as IProjectItem )?.Id == id) ?? node.Render();
+    static RenderFragment StepDashFragment(Step? step) => step switch { 
+        DrawingStep ds => @<DrawingDash Step="ds" />,
+        PaintingStep => @<PaintingDash/>,
+        _ => null 
+    };
+
+    static RenderFragment Render(INode<IProjectItem> node, Guid? id) => node.Render(n => n.Value.Id == id) ?? node.Render();
 }

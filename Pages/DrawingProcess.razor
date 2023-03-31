@@ -20,11 +20,11 @@ else {
     [CascadingParameter] public EventCallback ReloadCallback { get; set; }
 
     async void OnComplete() {
-      await using var context = await ContextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
 
-      await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 2 where Id = '{Step.Id}'");
+        await context.Database.ExecuteSqlRawAsync($"update DrawingSteps set Stage = 2 where Id = '{Step.Id}'");
 
-      await ReloadCallback.InvokeAsync();
+        await ReloadCallback.InvokeAsync();
     }
 
 }

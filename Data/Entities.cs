@@ -15,9 +15,7 @@ public interface IActivity {
     ActivityStatus Stage { get; }    
 }
 
-public enum ActivityStatus {
-    Pending, Active, Complete
-}
+public enum ActivityStatus { Pending, Active, Complete }
 
 public class Project : IProjectItem {
    public Guid Id { get; set; }
@@ -67,10 +65,8 @@ public class Context : DbContext
     public DbSet<DrawingStep> DrawingSteps { get; set; }
     public DbSet<PaintingStep> PaintingSteps { get; set; }
     
-    public Context()
-    {
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var path = Environment.GetFolderPath(folder);
+    public Context() {
+        var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         DbPath = Path.Join(path, "drawing.db");
     }
 
