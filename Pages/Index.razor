@@ -4,7 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 
 <CascadingValue Value="@EventCallback.Factory.Create(this, ReloadProject)" IsFixed="@true">
-    @Render(Build(Project), Selected)
+    @Render.PathOf(Build(Project), n => n.Value.Id == Selected)
 </CascadingValue>
 
 @code {
@@ -14,25 +14,20 @@
     
     Project Project { get; set; }
 
-    protected override async Task OnInitializedAsync() {
-        await ReloadProject();
-        
-        if( Selected is null ) {
-            NavMan.NavigateTo($"{Build(Project).TraverseActive(n => n).Value.Id}");
-        }
-    }
-
+    protected override async Task OnInitializedAsync() => await ReloadProject();
+    
     async Task ReloadProject() {
         await using var context = new Context();
         Project = await context.Projects
             .Include( p => p.Operations )
             .ThenInclude( o => o.Steps )
             .FirstAsync();
+        var selectedId = Build(Project).TraverseActive(n => n).Value.Id;
+        if( Selected != selectedId ) NavMan.NavigateTo($"{selectedId}");
     }
 
     INode<IProjectItem> Build(Project project) {
         var root = new WorkflowBranch(project, @<h1>@project.Name</h1>, project.Operations.OrderBy(o => o.Ord).Select(BuildOpNode));
-        
         return root with { Branches = root.Branches
             .Cast<WorkflowBranch>()
             .Select( n => n with { Fragment = TrackerFragment(root) })
@@ -50,15 +45,15 @@
     RenderFragment TrackerFragment(WorkflowBranch root) => 
         @<div>
             @foreach( var n in root.Branches ) {
-                <h2 @onclick="() => Navigate(n)" class="@Bold(Selected, n, root) @StageColor(n)">@n.Value.Name</h2>
+                <h2 @onclick="@(() => NavMan.NavigateTo($"/{n.Value.Id}"))"
+                    class="@Bold(Selected, n, root) @StageColor(n)">
+                    @n.Value.Name
+                </h2>
             }
         </div>;
 
-    void Navigate(INode<IProjectItem> node) => NavMan.NavigateTo($"/{node.Value.Id}");
-
     static string Bold(Guid? selected, INode<IProjectItem> node, INode<IProjectItem> root) => node switch { 
-        {Value: {} v} when v.Id == selected => "fw-bold",
-        IBranch<IProjectItem> b when b.Branches.Any( n => Bold(selected,n, root) is not "" ) => "fw-bold",
+        {} when node.Find( n => n.Value.Id == selected ) is {} => "fw-bold",
         _ when root.Value.Id == selected && root.TraverseActive( n => n.Value.Id == node.Value.Id ) => "fw-bold",
         _ => "" 
     };
@@ -74,6 +69,4 @@
         PaintingStep => @<PaintingDash/>,
         _ => null 
     };
-
-    static RenderFragment Render(INode<IProjectItem> node, Guid? id) => node.Render(n => n.Value.Id == id) ?? node.Render();
 }
